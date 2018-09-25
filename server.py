@@ -1,22 +1,38 @@
-from flask import Flask
-from flask import request
+from flask import Flask, request, render_template, abort
+import numpy as np
+import json
 
 app = Flask(__name__)
-d = {"192.168.88.101": "X", "192.168.88.104": "Y", "192.168.88.102": "Z"}
-speed = {"X": 40, "Y": 60, "Z": 10}
+sensorDict = {}
 
 
-@app.route('/',methods=['GET'])
+@app.route('/', methods=['GET'])
 def home():
-    return '<h1>Home</h1>'
+    return render_template('index.html')
 
 
-@app.route('/status',methods=['GET'])
+@app.route('/status', methods=['GET'])
 def status():
-    return str(speed["X"])+'\n'+str(speed["Y"])+'\n'+str(speed["Z"])
+    return json.dumps(list(sensorDict.keys()))
 
 
-@app.route('/classify',methods=['POST'])
+@app.route('/id/<sensorID>', methods=['GET'])
+def sensor(sensorID):
+    if sensorDict.__contains__(sensorID):
+        raw = sensorDict[sensorID]
+        data = np.asarray(raw)
+        target_trans = np.absolute(np.fft.fft(data))
+        target_list = target_trans[0:len(target_trans) // 2]
+        target_list = np.log10(target_list)
+        return json.dumps({
+            'raw': raw,
+            'fft': target_list.tolist()
+        })
+    else:
+        abort(404)
+
+
+@app.route('/classify', methods=['POST'])
 def classify():
     who = request.headers["who"]
     # if who!="192.168.88.102":
@@ -25,8 +41,11 @@ def classify():
     data = []
     for line in res:
         data.append(int(line))
-    print(who)
-    print(len(data))
+    i = who.split('.')[-1]
+    # print(i)
+    # print(len(data))
+    sensorDict[i] = data
+    # print(json.dumps(sensorDict))
     return "success"
 
 
