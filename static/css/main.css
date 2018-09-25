@@ -6,6 +6,15 @@ html {
     min-height: 100%;
 }
 
+canvas {
+
+    display: block;
+
+    height: 100%;
+
+    width: 100%;
+}
+
 body {
     background-color: #F3F5F8;
     font-family: "Source Sans Pro", sans-serif;

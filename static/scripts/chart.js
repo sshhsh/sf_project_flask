@@ -17,15 +17,21 @@ function updateWaterfall(d, w) {
         return;
     var now;
     if (w.length == 0) {
-        now = 0;
+        now = -3;
     } else {
-        now = w[w.length - 1][1] + 1;
+        now = w[w.length - 1][1] - 3;
     }
     let max = Math.log(d.length);
     for (var i = 0; i < 250; i = i + 1) {
-        w.push([i, now, d[Math.floor(Math.exp(i * max / 250))][1]]);
+        let a = Math.floor(Math.exp(i * max / 250))
+        let b = Math.exp(i * max / 250) - a;
+        let c = (1 - b) * d[a - 1][1] + b * d[a][1];
+        w.push([i * 3, now, c]);
     }
-    if (now - w[0][1] > 30) {
+    for (var i = 0; i < w.length; i = i + 1) {
+        w[i][1] += 3;
+    }
+    if (w[0][1] > 300) {
         w.splice(0, 250);
     }
     return;
@@ -69,14 +75,16 @@ function updateChart() {
             //         turboThreshold: Number.MAX_VALUE // #3404, remove after 4.0.5 release
             //     }]
             // });
+            updateCanvas();
             console.timeEnd("line");
+            up = setTimeout(updateChart, 1000);
         },
         cache: false
     });
 }
 
-var n = 5000, data = [], spectrum = [], water, currentID = 0, up;
-let rawChart, fftChart, waterfallChart;
+var n = 5000, data = [], spectrum = [], water, currentID = 0, up, heat;
+let rawChart, fftChart;
 
 
 $(document).ready(function () {
@@ -84,19 +92,26 @@ $(document).ready(function () {
     // spectrum = getData(n);
     water = [];
     updateWaterfall(spectrum, water);
-
+    heat = simpleheat('canvas');
+    heat.radius(2, 2);
+    heat.max(5.5);
 
     rawChart = Highcharts.chart('container', {
 
         chart: {
             zoomType: 'x',
-            marginLeft: 70,
+            marginLeft: 40,
             marginRight: 0,
-            height: 200
+            height: 400
         },
 
         title: {
             text: null
+        },
+
+        xAxis: {
+            minPadding: 0,
+            maxPadding: 0
         },
 
         credits: {
@@ -122,7 +137,7 @@ $(document).ready(function () {
         chart: {
             zoomType: 'x',
             height: 400,
-            marginLeft: 70,
+            marginLeft: 40,
             marginRight: 0,
         },
 
@@ -139,7 +154,9 @@ $(document).ready(function () {
         },
 
         xAxis: {
-            type: 'logarithmic'
+            type: 'logarithmic',
+            minPadding: 0,
+            maxPadding: 0
         },
 
         legend: {
@@ -152,66 +169,66 @@ $(document).ready(function () {
         }]
 
     });
-    waterfallChart = Highcharts.chart('waterfall', {
-        chart: {
-            type: 'heatmap',
-            marginLeft: 70,
-            marginRight: 0,
-            height: 300
-        },
-
-        boost: {
-            useGPUTranslations: true
-        },
-
-        title: {
-            text: null
-        },
-
-        tooltip: {
-            enabled: false
-        },
-
-        xAxis: {
-            // min: 1,
-            // max: 2500,
-            // // labels: {
-            // //     enabled: false
-            // // },
-            // type: 'logarithmic'
-        },
-
-        yAxis: {
-            minPadding: 0,
-            maxPadding: 0,
-            min: -30,
-            max: 0,
-            startOnTick: false,
-            endOnTick: false,
-            labels: {
-                enabled: false
-            }
-        },
-        colorAxis: {
-            min: 0,
-            max: null,
-            stops: [
-                [0, '#3060cf'],
-                [0.5, '#fffbbc'],
-                [0.9, '#c4463a'],
-                [1, '#c4463a']
-            ],
-        },
-
-        series: [{
-            data: water,
-            boostThreshold: 1,
-            borderWidth: 0,
-            nullColor: '#EFEFEF',
-            colsize: 1, // one day
-        }]
-
-    });
+    // waterfallChart = Highcharts.chart('waterfall', {
+    //     chart: {
+    //         type: 'heatmap',
+    //         marginLeft: 70,
+    //         marginRight: 0,
+    //         height: 300
+    //     },
+    //
+    //     boost: {
+    //         useGPUTranslations: true
+    //     },
+    //
+    //     title: {
+    //         text: null
+    //     },
+    //
+    //     tooltip: {
+    //         enabled: false
+    //     },
+    //
+    //     xAxis: {
+    //         // min: 1,
+    //         // max: 2500,
+    //         // // labels: {
+    //         // //     enabled: false
+    //         // // },
+    //         // type: 'logarithmic'
+    //     },
+    //
+    //     yAxis: {
+    //         minPadding: 0,
+    //         maxPadding: 0,
+    //         min: -30,
+    //         max: 0,
+    //         startOnTick: false,
+    //         endOnTick: false,
+    //         labels: {
+    //             enabled: false
+    //         }
+    //     },
+    //     colorAxis: {
+    //         min: 0,
+    //         max: null,
+    //         stops: [
+    //             [0, '#3060cf'],
+    //             [0.5, '#fffbbc'],
+    //             [0.9, '#c4463a'],
+    //             [1, '#c4463a']
+    //         ],
+    //     },
+    //
+    //     series: [{
+    //         data: water,
+    //         boostThreshold: 1,
+    //         borderWidth: 0,
+    //         nullColor: '#EFEFEF',
+    //         colsize: 1, // one day
+    //     }]
+    //
+    // });
 
     $.ajax({
         url: '/status',
@@ -229,7 +246,7 @@ $(document).ready(function () {
                     "</a></li>"
             }
             $("#sensors").html(menuItem);
-            up = setInterval(updateChart, 1000);
+            updateChart();
         }
     });
 });
@@ -243,10 +260,14 @@ function updateCurrent(c) {
 function pause(p) {
     console.log(p);
     if (p === 'Pause') {
-        clearInterval(up);
+        clearTimeout(up);
         $("#pause").html('Resume');
     } else {
-        up = setInterval(updateChart, 1000);
+        up = setTimeout(updateChart, 1000);
         $("#pause").html('Pause');
     }
+}
+
+function updateCanvas() {
+    heat.clear().data(water).draw();
 }
