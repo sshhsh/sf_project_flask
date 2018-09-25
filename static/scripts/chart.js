@@ -49,16 +49,14 @@ function updateChart() {
             data = getData(rtn["raw"]);
             spectrum = getData(rtn["fft"]);
             updateWaterfall(spectrum, water);
-            rawChart.update({
+            rawChart.setOption({
                 series: [{
-                    data: data,
-                    lineWidth: 0.5
+                    data: data
                 }]
             });
-            fftChart.update({
+            fftChart.setOption({
                 series: [{
-                    data: spectrum,
-                    lineWidth: 0.5
+                    data: spectrum
                 }]
             });
             // waterfallChart.update({
@@ -96,139 +94,71 @@ $(document).ready(function () {
     heat.radius(2, 2);
     heat.max(5.5);
 
-    rawChart = Highcharts.chart('container', {
-
-        chart: {
-            zoomType: 'x',
-            marginLeft: 40,
-            marginRight: 0,
-            height: 400
+    rawChart = echarts.init(document.getElementById('container'), 'light')
+    rawChart.setOption({
+        xAxis:{
+            type: 'value',
+            min: 'dataMin',
+            max: 'dataMax'
         },
-
-        title: {
-            text: null
+        yAxis:{
+            type: 'value'
         },
-
-        xAxis: {
-            minPadding: 0,
-            maxPadding: 0
-        },
-
-        credits: {
-            enabled: false
-        },
-
         tooltip: {
-            valueDecimals: 2
+            trigger: 'axis',
         },
-
-        legend: {
-            enabled: false
-        },
-
-        series: [{
-            data: data,
-            lineWidth: 0.5
+        series:[{
+            data: [],
+            type: 'line',
+            showSymbol: false,
+            hoverAnimation: false,
+            lineStyle: {
+                width: 0.5
+            },
         }]
-
-    });
-    fftChart = Highcharts.chart('container2', {
-
-        chart: {
-            zoomType: 'x',
-            height: 400,
-            marginLeft: 40,
-            marginRight: 0,
+    })
+    fftChart = echarts.init(document.getElementById('container2'), 'light')
+    fftChart.setOption({
+        xAxis:{
+            type: 'log',
+            min: 'dataMin',
+            max: 'dataMax'
         },
-
-        title: {
-            text: null
+        yAxis:{
+            type: 'value'
         },
-
-        credits: {
-            enabled: false
-        },
-
         tooltip: {
-            valueDecimals: 2
+            trigger: 'axis',
         },
-
-        xAxis: {
-            type: 'logarithmic',
-            minPadding: 0,
-            maxPadding: 0
-        },
-
-        legend: {
-            enabled: false
-        },
-
-        series: [{
-            data: spectrum,
-            lineWidth: 0.5
+        series:[{
+            data: [],
+            type: 'line',
+            showSymbol: false,
+            hoverAnimation: false,
+            lineStyle: {
+                width: 0.5
+            },
+            markPoint: {
+                symbol: 'pin',
+                label: {
+                    formatter: function (params) {
+                        console.log(params);
+                        return params.data.coord[0].toString();
+                    }
+                },
+                data: [
+                    {
+                        name: 'Max',
+                        type: 'max'
+                    }
+                ]
+            }
         }]
-
-    });
-    // waterfallChart = Highcharts.chart('waterfall', {
-    //     chart: {
-    //         type: 'heatmap',
-    //         marginLeft: 70,
-    //         marginRight: 0,
-    //         height: 300
-    //     },
-    //
-    //     boost: {
-    //         useGPUTranslations: true
-    //     },
-    //
-    //     title: {
-    //         text: null
-    //     },
-    //
-    //     tooltip: {
-    //         enabled: false
-    //     },
-    //
-    //     xAxis: {
-    //         // min: 1,
-    //         // max: 2500,
-    //         // // labels: {
-    //         // //     enabled: false
-    //         // // },
-    //         // type: 'logarithmic'
-    //     },
-    //
-    //     yAxis: {
-    //         minPadding: 0,
-    //         maxPadding: 0,
-    //         min: -30,
-    //         max: 0,
-    //         startOnTick: false,
-    //         endOnTick: false,
-    //         labels: {
-    //             enabled: false
-    //         }
-    //     },
-    //     colorAxis: {
-    //         min: 0,
-    //         max: null,
-    //         stops: [
-    //             [0, '#3060cf'],
-    //             [0.5, '#fffbbc'],
-    //             [0.9, '#c4463a'],
-    //             [1, '#c4463a']
-    //         ],
-    //     },
-    //
-    //     series: [{
-    //         data: water,
-    //         boostThreshold: 1,
-    //         borderWidth: 0,
-    //         nullColor: '#EFEFEF',
-    //         colsize: 1, // one day
-    //     }]
-    //
-    // });
+    })
+    window.onresize = function(){
+        rawChart.resize();
+        fftChart.resize();
+    };
 
     $.ajax({
         url: '/status',
